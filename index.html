@@ -115,7 +115,9 @@
 
   <script>
     let engine = null;
+    let isEngineReady = false; // 엔진 로딩 완료 상태 관리 플래그
 
+    // 1. 모달에서 사양 모드 선택 시 처리 함수
     function selectDeviceMode(mode) {
       const selectEl = document.getElementById("modelSelect");
       const modal = document.getElementById("deviceModal");
@@ -130,36 +132,47 @@
       initWebLLM();
     }
 
+    // 2. WebLLM 엔진 초기화 함수 (오류 보완)
     async function initWebLLM() {
       const statusEl = document.getElementById("engineStatus");
       const model = document.getElementById("modelSelect").value;
       const btn = document.getElementById("initEngineBtn");
+      const verifyBtn = document.getElementById("verifyBtn");
 
       try {
+        isEngineReady = false;
+        verifyBtn.disabled = true;
+        verifyBtn.className = "w-full bg-slate-300 text-slate-500 py-3 rounded-lg font-bold text-sm cursor-not-allowed transition";
+
         statusEl.className = "text-sm font-semibold text-indigo-600";
-        statusEl.innerText = "⏳ AI 모델 다운로드 및 준비 중...";
+        statusEl.innerText = "⏳ AI 모델 다운로드 및 메모리 로드 중...";
         btn.disabled = true;
 
+        // 엔진 생성 및 모델 로드 완료까지 대기
         engine = await window.webllm.CreateMLCEngine(model, {
           initProgressCallback: (progress) => {
             const pct = Math.round(progress.progress * 100);
-            statusEl.innerText = `⏳ 모델 로딩 중: ${pct}%`;
+            statusEl.innerText = `⏳ 모델 로딩 중: ${pct}% (${progress.text || ''})`;
           }
         });
 
+        // 정상 준비 완료 시 플래그 설정 및 버튼 활성화
+        isEngineReady = true;
         statusEl.className = "text-sm font-semibold text-emerald-600";
         statusEl.innerText = "✅ AI 엔진 준비 완료!";
         
-        const verifyBtn = document.getElementById("verifyBtn");
         verifyBtn.disabled = false;
         verifyBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold text-sm cursor-pointer transition shadow-md";
       } catch (err) {
+        isEngineReady = false;
         statusEl.className = "text-sm font-semibold text-red-600";
         statusEl.innerText = "❌ 엔진 로드 실패 (WebGPU 미지원 또는 메모리 부족)";
         btn.disabled = false;
+        console.error("WebLLM Init Error:", err);
       }
     }
 
+    // 3. OpenAlex 논문 데이터 검색 함수
     async function fetchOpenAlexPapers(query) {
       try {
         const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=3`;
@@ -176,7 +189,14 @@
       }
     }
 
+    // 4. 통합 검증 실행 함수
     async function startVerification() {
+      // 안전 상태 점검
+      if (!isEngineReady || !engine) {
+        alert("AI 엔진이 아직 로드되지 않았습니다. 상단의 '브라우저 AI 엔진 로드하기' 버튼을 눌러 로딩을 먼저 마쳐주세요.");
+        return;
+      }
+
       const rawText = document.getElementById("rawText").value;
       const title = document.getElementById("docTitle").value || rawText.slice(0, 15);
       const verifyBtn = document.getElementById("verifyBtn");
@@ -186,6 +206,7 @@
       verifyBtn.disabled = true;
       verifyBtn.innerText = "⏳ OpenAlex 논문 검색 및 AI 교차 검증 중...";
 
+      // Step A: OpenAlex 논문 검색
       const papers = await fetchOpenAlexPapers(title);
       const sourcesList = document.getElementById("sourcesList");
       
@@ -195,6 +216,7 @@
         sourcesList.innerText = "관련 학술 논문을 찾지 못했습니다.";
       }
 
+      // Step B: WebLLM 검증 실행
       const prompt = `
         [검증 대상 텍스트]: "${rawText}"
         [참고 논문 리스트]: ${JSON.stringify(papers.map(p => p.title))}
@@ -210,6 +232,7 @@
         });
 
         const reply = response.choices[0].message.content;
+        
         const jsonStart = reply.indexOf('{');
         const jsonEnd = reply.lastIndexOf('}') + 1;
         
@@ -225,12 +248,14 @@
 
       } catch (e) {
         alert("검증 과정 중 오류가 발생했습니다: " + e.message);
+        console.error("Verification Error:", e);
       } finally {
         verifyBtn.disabled = false;
         verifyBtn.innerText = "✨ OpenAlex + WebLLM 검증 시작하기";
       }
     }
 
+    // 5. GAS 구글 시트 저장 함수
     async function saveToGas(title, rawText, verifiedText, score, papers) {
       const gasUrl = document.getElementById("gasUrl").value;
       if (!gasUrl) return;
