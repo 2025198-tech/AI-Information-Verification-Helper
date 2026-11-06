@@ -1,2 +1,2 @@
 # subscribe-manager
-정기 구독 관리 매니저
+ai 정보 검증 도우미
