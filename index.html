@@ -66,9 +66,9 @@
         <div>
           <h3 class="font-bold text-slate-800 mb-2">📌 사용 단계</h3>
           <ol class="list-decimal list-inside space-y-2 text-slate-500">
-            <li><b>주제 및 원문 입력:</b> 검증할 주제와 텍스트를 입력합니다. (우측 상단 예시 입력 버튼 활용 가능)</li>
+            <li><b>주제 및 원문 입력:</b> 검증할 주제 키워드와 원문 텍스트를 입력합니다.</li>
             <li><b>검증 실행:</b> '분석 및 검증 시작하기' 버튼을 누릅니다.</li>
-            <li><b>리포트 확인:</b> 신뢰도 점수, 학술 출처, 추출된 오류 항목을 확인하고 필요시 복사합니다.</li>
+            <li><b>리포트 확인:</b> 세로 간격이 넓어진 리포트 창에서 추출 오류를 상세히 검토합니다.</li>
           </ol>
         </div>
       </div>
@@ -96,7 +96,6 @@
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
             <span class="text-indigo-500">📝</span> 검증할 내용 입력
           </h2>
-          <!-- 편의 기능: 샘플 데이터 입력 버튼 -->
           <button type="button" onclick="loadSampleText()" class="text-xs bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">
             🧪 테스트 예시 불러오기
           </button>
@@ -109,7 +108,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">AI 원문 텍스트</label>
-            <textarea id="rawText" rows="9" placeholder="검증하고 싶은 임의의 AI 작성 글을 이곳에 붙여넣으세요..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none leading-relaxed"></textarea>
+            <textarea id="rawText" rows="10" placeholder="검증하고 싶은 임의의 AI 작성 글을 이곳에 붙여넣으세요..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none leading-relaxed"></textarea>
           </div>
         </div>
         
@@ -118,13 +117,12 @@
         </button>
       </div>
 
-      <!-- [오른쪽] 결과 창 -->
+      <!-- [오른쪽] 결과 창 (리포트 세로 간격 확장 완료) -->
       <div class="bg-white p-7 lg:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full">
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
             <span class="text-emerald-500">📊</span> 검증 분석 리포트
           </h2>
-          <!-- 편의 기능: 결과 복사 버튼 -->
           <button type="button" onclick="copyReport()" class="text-xs bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer">
             📋 결과 복사
           </button>
@@ -138,17 +136,18 @@
           <span id="scoreText" class="text-4xl font-black text-slate-300 tracking-tighter">-%</span>
         </div>
 
-        <div class="space-y-6 flex-grow">
+        <div class="space-y-6 flex-grow flex flex-col">
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">학술 데이터 대조 출처</label>
-            <div id="sourcesList" class="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm min-h-[80px] text-slate-500 leading-relaxed overflow-y-auto max-h-[150px]">
+            <div id="sourcesList" class="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm min-h-[80px] text-slate-500 leading-relaxed overflow-y-auto max-h-[140px]">
               검증이 완료되면 OpenAlex 대조 논문이 이곳에 표시됩니다.
             </div>
           </div>
 
+          <!-- ★ 세로 간격을 충분히 높인 리포트 텍스트 영역 (rows=12, min-h-[260px]) -->
           <div class="flex-grow flex flex-col">
             <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">추출된 오류 및 상세 리포트</label>
-            <textarea id="verifiedText" class="w-full flex-grow p-4 bg-slate-800 text-slate-100 border-none rounded-2xl text-sm font-mono focus:outline-none resize-none leading-relaxed placeholder-slate-500" readonly placeholder="원문에서 동적으로 추출된 의심 수치 및 오류 사유가 출력됩니다."></textarea>
+            <textarea id="verifiedText" rows="12" class="w-full flex-grow min-h-[260px] p-5 bg-slate-800 text-slate-100 border-none rounded-2xl text-sm font-mono focus:outline-none resize-y leading-relaxed placeholder-slate-500" readonly placeholder="원문에서 동적으로 추출된 의심 수치 및 오류 사유가 이곳에 넓고 깔끔하게 출력됩니다."></textarea>
           </div>
         </div>
       </div>
@@ -181,13 +180,11 @@
       }
     }
 
-    // UX 편의 기능 1: 원클릭 테스트 샘플 데이터 불러오기
     function loadSampleText() {
-      document.getElementById("docTitle").value = "크리스퍼 유전자 가위 효능";
-      document.getElementById("rawText").value = "크리스퍼 유전자 가위 기술은 2024년 발표된 임상 결과에 따라 매일 복용하는 영양제 형태로 섭취할 시 체내 비타민 C를 합성하고 모든 암세포가 100% 완치되어 수명이 150세까지 연장됩니다.";
+      document.getElementById("docTitle").value = "아스피린 심혈관 질환 예방 효과";
+      document.getElementById("rawText").value = "아스피린은 혈전 생성을 억제하는 유용한 약물입니다. 2025년 최신 임상 연구에 따르면 하루 5,000mg의 아스피린을 매일 복용할 경우 심혈관 질환 위험이 100% 완치되며, 위장관 출혈과 같은 부작용이 전혀 없음이 증명되었습니다.";
     }
 
-    // UX 편의 기능 2: 분석 리포트 클립보드 복사
     function copyReport() {
       const reportText = document.getElementById("verifiedText").value;
       if (!reportText.trim()) return alert("복사할 검증 리포트 내용이 없습니다.");
@@ -229,9 +226,9 @@
 
       const dosageMatches = rawText.match(/\b\d+(,\d+)?\s*(mg|g|kg|세|회)\b/gi) || [];
       dosageMatches.forEach(dosage => {
-        if (dosage.includes("1000") || dosage.includes("1,000") || dosage.includes("150")) {
+        if (dosage.includes("1000") || dosage.includes("1,000") || dosage.includes("5,000") || dosage.includes("5000") || dosage.includes("150")) {
           score -= 10;
-          issues.push({ keyword: dosage, reason: `고용량/극단적 수치: 안전성 검토가 필요한 수치입니다.` });
+          issues.push({ keyword: dosage, reason: `고용량/극단적 수치: 위장 출혈 등 부작용 검토가 필요한 오남용 수치입니다.` });
         }
       });
 
@@ -244,7 +241,7 @@
           const isMatched = paperYears.some(py => Math.abs(py - yearNum) <= 2);
           if (!isMatched && yearNum > 2000) {
             score -= 10;
-            issues.push({ keyword: yearStr, reason: `연도 불일치: 관련 논문들의 주요 발표 연도와 다릅니다.` });
+            issues.push({ keyword: yearStr, reason: `연도 불일치: 관련 대표 학술 논문들의 발표 연도와 대조해야 합니다.` });
           }
         }
       });
@@ -263,10 +260,10 @@
       if (issues.length > 0) {
         report += `🚨 추출된 검증 필요 항목 (${issues.length}건):\n\n`;
         issues.forEach((item, idx) => {
-          report += `${idx + 1}. [${item.keyword}]\n   └ ${item.reason}\n\n`;
+          report += `${idx + 1}. [추출 키워드: "${item.keyword}"]\n   └ 사유: ${item.reason}\n\n`;
         });
       } else {
-        report += "✅ 명확한 위험 수치나 과장 패턴이 감지되지 않았습니다.";
+        report += "✅ 입력된 텍스트에서 명확한 위험 수치나 과장 패턴이 감지되지 않았습니다.";
       }
 
       return { score, report };
