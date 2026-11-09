@@ -6,7 +6,7 @@
   <title>AI 팩트체커 - 지능형 정보 검증</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 스크롤바 디자인 깔끔하게 수정 */
+    /* 스크롤바 디자인 */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -20,8 +20,8 @@
     <span class="text-lg">📖</span> 사용 설명서
   </button>
 
-  <!-- 2. 기기 실행 환경 선택 모달 -->
-  <div id="deviceModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <!-- 2. 기기 실행 환경 선택 모달 (초기 표시됨) -->
+  <div id="deviceModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300" style="opacity: 1;">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center border border-white/20">
       <div class="text-5xl mb-4">⚙️</div>
       <h2 class="text-2xl font-bold text-slate-800 mb-2">실행 환경 선택</h2>
@@ -30,6 +30,7 @@
       </p>
 
       <div class="space-y-4">
+        <!-- 모바일 버튼 -->
         <button onclick="selectDeviceMode('mobile')" class="w-full p-5 border-2 border-slate-100 hover:border-emerald-400 bg-white hover:bg-emerald-50 rounded-2xl text-left transition-all flex items-center justify-between group">
           <div>
             <div class="font-bold text-slate-700 group-hover:text-emerald-800">📱 스마트폰 / 저전력 모드</div>
@@ -38,6 +39,7 @@
           <span class="text-slate-300 group-hover:text-emerald-500 font-bold group-hover:translate-x-1 transition-transform">→</span>
         </button>
 
+        <!-- PC 버튼 -->
         <button onclick="selectDeviceMode('pc')" class="w-full p-5 border-2 border-slate-100 hover:border-indigo-400 bg-white hover:bg-indigo-50 rounded-2xl text-left transition-all flex items-center justify-between group">
           <div>
             <div class="font-bold text-slate-700 group-hover:text-indigo-800">💻 PC / 고성능 모드</div>
@@ -49,8 +51,8 @@
     </div>
   </div>
 
-  <!-- 3. 사용 설명서 팝업 모달 -->
-  <div id="guideModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+  <!-- 3. 사용 설명서 팝업 모달 (초기 숨김 완벽 처리) -->
+  <div id="guideModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300" style="display: none; opacity: 0;">
     <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 border border-white/20 relative max-h-[85vh] overflow-y-auto">
       <button onclick="toggleGuideModal(false)" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full w-8 h-8 flex items-center justify-center transition">✕</button>
       
@@ -146,28 +148,31 @@
 
   <script>
     // ==========================================
-    // ⚙️ 개발자 설정 영역 (사용자에게는 보이지 않습니다)
+    // ⚙️ 개발자 설정 영역
     // ==========================================
-    // 아래 따옴표 안에 배포하신 구글 앱스 스크립트(GAS) Web App URL을 넣어주세요.
-    // 비워두면 에러 없이 화면 검증 기능만 단독으로 작동합니다.
     const GAS_URL = "https://script.google.com/macros/s/AKfycbx4OmDKHNKDYBA8PyGKYQQiuTxNNV77jdIvF9BuKqNzQyDJVhx5pfS49XZAHbSHDLjQ/exec"; 
     // ==========================================
 
+    // [버그 수정됨] 실행 모드 선택 시 클릭 막힘 현상 완벽 해결
     function selectDeviceMode(mode) {
-      // 선택 기록을 내부적으로 처리하고 UI를 부드럽게 닫습니다.
       const modal = document.getElementById("deviceModal");
+      // 1. 모달을 투명하게 만듦 (애니메이션)
       modal.style.opacity = '0';
-      setTimeout(() => modal.classList.add("hidden"), 300);
+      // 2. 투명해진 직후(0.3초 뒤) 물리적으로 화면에서 완전히 제거하여 클릭 방해 방지
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
     }
 
+    // [버그 수정됨] 가이드 모달 충돌 방지
     function toggleGuideModal(show) {
       const modal = document.getElementById("guideModal");
       if (show) {
-        modal.classList.remove("hidden");
-        setTimeout(() => modal.style.opacity = '1', 10);
+        modal.style.display = "flex"; // 물리적으로 화면에 띄움
+        setTimeout(() => modal.style.opacity = '1', 10); // 0.01초 뒤 투명도 해제 (애니메이션)
       } else {
-        modal.style.opacity = '0';
-        setTimeout(() => modal.classList.add("hidden"), 300);
+        modal.style.opacity = '0'; // 투명해짐
+        setTimeout(() => modal.style.display = "none", 300); // 완전히 숨김
       }
     }
 
@@ -278,7 +283,6 @@
       
       document.getElementById("verifiedText").value = report;
 
-      // 설정된 GAS_URL이 있을 경우에만 시트에 저장 시도
       if (GAS_URL) {
         saveToGas(GAS_URL, title, rawText, report, score, papers);
       }
@@ -306,7 +310,7 @@
       try {
         fetch(url, {
           method: "POST",
-          mode: "no-cors",sc
+          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
